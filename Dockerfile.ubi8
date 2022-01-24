@@ -1,0 +1,17 @@
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4-200
+
+RUN microdnf install -y wget
+RUN wget https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+RUN rpm -i pgdg-redhat-repo-latest.noarch.rpm
+RUN microdnf install postgresql14-server
+RUN microdnf install postgresql14-contrib
+USER postgres
+RUN /usr/pgsql-14/bin/initdb -D /var/lib/pgsql/14/data
+### This part needs to be changed based on postgres vars #############
+RUN /usr/pgsql-14/bin/pg_ctl start -D /var/lib/pgsql/14/data -s -o "-p 5432" -w -t 300 &&\
+                /bin/psql --command "CREATE USER docker WITH SUPERUSER PASSWORD 'docker';" &&\
+                /bin/createdb -O docker docker
+RUN echo "host all  all    0.0.0.0/0  md5" >> //var/lib/pgsql/14/data/pg_hba.conf
+RUN echo "listen_addresses='*'" >> /var/lib/pgsql/14/data/postgresql.conf
+EXPOSE 5432
+CMD ["/usr/pgsql-14/bin/postgres", "-D", "/var/lib/pgsql/14/data", "-c", "config_file=/var/lib/pgsql/14/data/postgresql.conf"]
