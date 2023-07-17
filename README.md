@@ -1,4 +1,4 @@
-# PostgreSQL 14.1 SQL Database Server container image
+# PostgreSQL 14.8 SQL Database Server container image
 This container image includes PostgreSQL 14.1 SQL database server for general usage. Users can choose between RHEL(ubi8) and Rocky based images.
 
 ## Quick Start
