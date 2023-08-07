@@ -1,4 +1,6 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4-200
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.7-1107
+
+ARG TARGETPLATFORM=linux/amd64
 
 ENV PGDATA /var/lib/pgsql/data/userdata
 ENV PGUSER postgres
@@ -8,14 +10,31 @@ ENV POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
 ENV POSTGRESQL_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
 ENV PATH $PATH:$PGDATA
 
-RUN microdnf install -y dnf && \
-            dnf update -y && \
-            dnf install -y \
-              langpacks-en glibc-all-langpacks -y \
-              https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8-x86_64/postgresql14-server-14.1-1PGDG.rhel8.x86_64.rpm \
-              https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8-x86_64/postgresql14-libs-14.1-1PGDG.rhel8.x86_64.rpm \
-              https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8-x86_64/postgresql14-14.1-1PGDG.rhel8.x86_64.rpm \
-              https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8-x86_64/postgresql14-contrib-14.1-1PGDG.rhel8.x86_64.rpm
+#Install PostgreSQL for linux/amd64
+RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ]; then \
+    rm -f etc/rpm/macros.image-language-conf && \
+    microdnf install -y dnf && \
+    dnf update -y && \
+    dnf install -y \
+    langpacks-en glibc-all-langpacks -y \
+    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-server-14.8-1PGDG.rhel8.x86_64.rpm \
+    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-libs-14.8-1PGDG.rhel8.x86_64.rpm \
+    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-14.8-1PGDG.rhel8.x86_64.rpm \
+    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-contrib-14.8-1PGDG.rhel8.x86_64.rpm; \
+    fi
+
+#Install PostgreSQL for linux/arm64
+RUN if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
+    rm -f etc/rpm/macros.image-language-conf && \
+    microdnf install -y dnf && \
+    dnf update -y && \
+    dnf install -y \
+    langpacks-en glibc-all-langpacks -y \
+    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-aarch64/postgresql14-server-14.8-1PGDG.rhel8.aarch64.rpm \
+    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-aarch64/postgresql14-libs-14.8-1PGDG.rhel8.aarch64.rpm \
+    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-aarch64/postgresql14-14.8-1PGDG.rhel8.aarch64.rpm \
+    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-aarch64/postgresql14-contrib-14.8-1PGDG.rhel8.aarch64.rpm; \
+    fi
 
 COPY docker-entrypoint.sh /
 COPY check-container /usr/libexec/
