@@ -1,4 +1,4 @@
-FROM rockylinux:8.7
+FROM rockylinux:8.8
 
 ARG TARGETPLATFORM
 
@@ -11,17 +11,17 @@ ENV POSTGRESQL_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
 ENV PATH $PATH:$PGDATA
 
 # Install PostgreSQL for linux/amd64
-RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ]; then \
-    dnf update -y && \
-    dnf install -y langpacks-en glibc-all-langpacks -y \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-server-14.8-1PGDG.rhel8.x86_64.rpm \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-libs-14.8-1PGDG.rhel8.x86_64.rpm \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-14.8-1PGDG.rhel8.x86_64.rpm \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-contrib-14.8-1PGDG.rhel8.x86_64.rpm; \
+RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ] ; then \
+      dnf update -y && \
+      dnf install -y langpacks-en glibc-all-langpacks -y \
+      https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-server-14.8-1PGDG.rhel8.x86_64.rpm \
+      https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-libs-14.8-1PGDG.rhel8.x86_64.rpm \
+      https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-14.8-1PGDG.rhel8.x86_64.rpm \
+      https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-contrib-14.8-1PGDG.rhel8.x86_64.rpm; \
     fi
 
 # Install PostgreSQL for linux/arm64
-RUN if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
+RUN if [ "${TARGETPLATFORM}" = "linux/arm64" ] ; then \
     dnf update -y && \
     dnf install -y langpacks-en glibc-all-langpacks -y \
     https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-aarch64/postgresql14-server-14.8-1PGDG.rhel8.aarch64.rpm \
@@ -32,6 +32,7 @@ RUN if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
 
 COPY docker-entrypoint.sh /
 COPY check-container /usr/libexec/
+
 RUN chmod a+xr /docker-entrypoint.sh \
  && usermod -a -G root postgres \
  && chgrp -R root "/var/lib/pgsql/" \
