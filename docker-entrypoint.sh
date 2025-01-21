@@ -33,6 +33,8 @@ else
   [ ! -d "$PGDATA" ] && {
     LANG=${LANG:-en_US.utf8} /usr/pgsql-14/bin/initdb -D "$PGDATA" --username "$PGUSER"
   }
+  
+  chown -R "$PGUSER":"$PGUSER" "$PGDATA"
   chmod -R 0700 "$PGDATA"
 
   # internal start of server in order to allow set-up using psql-client
