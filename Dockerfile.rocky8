@@ -34,9 +34,7 @@ COPY docker-entrypoint.sh /
 COPY check-container /usr/libexec/
 RUN chmod a+xr /docker-entrypoint.sh \
  && usermod -a -G root postgres \
- && chgrp -R root "/var/lib/pgsql/" \
  && chmod g+rwX "/var/lib/pgsql/" \
- && chgrp -R root "/var/run/postgresql" \
  && chmod g+rw "/var/run/postgresql" \
  && chmod ug+x "/usr/libexec/check-container" \
   ;

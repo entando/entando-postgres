@@ -6,7 +6,7 @@ PGCTL="/usr/pgsql-14/bin/pg_ctl"
 
 if [ -f "${PGDATA}initialized" ]; then
   echo "Database already initialized" 1>&2
-  chmod -R 0700 "$PGDATA"
+  chmod -R 0770 "$PGDATA"
 else
   # REQUIRED VARS CHECK
   [[ -z "${POSTGRESQL_DATABASE}" || "${POSTGRESQL_DATABASE}" == *'"'* ]] && {
@@ -34,8 +34,7 @@ else
     LANG=${LANG:-en_US.utf8} /usr/pgsql-14/bin/initdb -D "$PGDATA" --username "$PGUSER"
   }
   
-  chown -R "$PGUSER":"$PGUSER" "$PGDATA"
-  chmod -R 0700 "$PGDATA"
+  chmod -R 0770 "$PGDATA"
 
   # internal start of server in order to allow set-up using psql-client
   # does not listen on external TCP/IP and waits until start finishes
