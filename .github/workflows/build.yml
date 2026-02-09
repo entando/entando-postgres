@@ -1,0 +1,53 @@
+name: Maven MultiModule PR
+
+env:
+  ENTANDO_GITHUB_TOOLS_VERSION: "v0.1.1"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_PR_TITLE: ${{ github.event.pull_request.title }}
+  GH_PR_NUMBER: ${{ github.event.pull_request.number }}
+  GH_PR_RUN_NUMBER: ${{ github.run_number }}
+  IMAGES_TO_BUILD: "Dockerfile.rocky9:entando-postgres-rocky,Dockerfile.ubi9:entando-postgres-ubi"
+  ENTANDO_CRANE_VERSION: ${{ vars.ENTANDO_CRANE_VERSION || 'v0.10.0' }}
+  GITHUB_REF: ${{ github.ref }}
+
+on:
+  push:
+    branches: [ "develop", "release/*" ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ "develop", "release/*" ]
+
+jobs:
+  publish:
+    permissions:
+      contents: read
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure
+      run: if [ -f ".github/configure" ]; then . .github/configure "publish"; fi
+
+    - name: Build Docker image
+      run: |
+        .github/github-tools/docker.multiBuild \
+          "${IMAGES_TO_BUILD}" \
+          "${ARTIFACT_VERSION}" \
+          "${{ vars.DOCKER_ORG }}" \
+        ;
+
+    - name: Publish Docker image
+      run: |
+        GH_DO_COMMENT=true \
+          .github/github-tools/docker.multiPublish \
+            "${IMAGES_TO_BUILD}" \
+            "${ARTIFACT_VERSION}" \
+            "${{ vars.DOCKER_ORG }}" \
+            "${{ vars.DOCKER_REGISTRY }}" \
+            "${{ secrets.DOCKER_USERNAME }}" \
+            "${{ secrets.DOCKER_PASSWORD }}" \
+            "${ARTIFACT_PUB_TYPE}" \
+          ;
