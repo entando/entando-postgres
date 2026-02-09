@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.7-1107
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5
 
 ARG TARGETPLATFORM
 
@@ -17,10 +17,10 @@ RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ]; then \
     dnf update -y && \
     dnf install -y \
     langpacks-en glibc-all-langpacks -y \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-server-14.8-1PGDG.rhel8.x86_64.rpm \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-libs-14.8-1PGDG.rhel8.x86_64.rpm \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-14.8-1PGDG.rhel8.x86_64.rpm \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-x86_64/postgresql14-contrib-14.8-1PGDG.rhel8.x86_64.rpm; \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-server-18.1-1PGDG.rhel9.x86_64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-libs-18.1-1PGDG.rhel9.x86_64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-18.1-1PGDG.rhel9.x86_64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-contrib-18.1-1PGDG.rhel9.x86_64.rpm; \
     fi
 
 #Install PostgreSQL for linux/arm64
@@ -30,10 +30,10 @@ RUN if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
     dnf update -y && \
     dnf install -y \
     langpacks-en glibc-all-langpacks -y \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-aarch64/postgresql14-server-14.8-1PGDG.rhel8.aarch64.rpm \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-aarch64/postgresql14-libs-14.8-1PGDG.rhel8.aarch64.rpm \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-aarch64/postgresql14-14.8-1PGDG.rhel8.aarch64.rpm \
-    https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8.7-aarch64/postgresql14-contrib-14.8-1PGDG.rhel8.aarch64.rpm; \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-server-18.1-2PGDG.rhel9.aarch64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-libs-18.1-2PGDG.rhel9.aarch64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-18.1-2PGDG.rhel9.aarch64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-contrib-18.1-2PGDG.rhel9.aarch64.rpm; \
     fi
 
 COPY docker-entrypoint.sh /
@@ -57,4 +57,4 @@ STOPSIGNAL SIGINT
 
 EXPOSE 5432
 
-CMD ["/usr/pgsql-14/bin/postgres"]
+CMD ["/usr/pgsql-18/bin/postgres"]

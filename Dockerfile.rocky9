@@ -1,0 +1,54 @@
+FROM rockylinux:9
+
+ARG TARGETPLATFORM
+
+ENV PGDATA /var/lib/pgsql/data/userdata
+ENV PGUSER postgres
+ENV POSTGRESQL_USER=${POSTGRESQL_USER}
+ENV POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+ENV POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
+ENV POSTGRESQL_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
+ENV PATH $PATH:$PGDATA
+
+# Install PostgreSQL for linux/amd64
+RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ]; then \
+    dnf -qy module disable postgresql && \
+    dnf update -y && \
+    dnf install -y langpacks-en glibc-all-langpacks -y \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-server-18.1-1PGDG.rhel9.x86_64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-libs-18.1-1PGDG.rhel9.x86_64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-18.1-1PGDG.rhel9.x86_64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-contrib-18.1-1PGDG.rhel9.x86_64.rpm; \
+    fi
+
+# Install PostgreSQL for linux/arm64
+RUN if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
+    dnf -qy module disable postgresql && \
+    dnf update -y && \
+    dnf install -y langpacks-en glibc-all-langpacks -y \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-server-18.1-2PGDG.rhel9.aarch64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-libs-18.1-2PGDG.rhel9.aarch64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-18.1-2PGDG.rhel9.aarch64.rpm \
+    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-contrib-18.1-2PGDG.rhel9.aarch64.rpm; \
+    fi
+
+COPY docker-entrypoint.sh /
+COPY check-container /usr/libexec/
+RUN chmod a+xr /docker-entrypoint.sh \
+ && usermod -a -G root postgres \
+ && chgrp -R root "/var/lib/pgsql/" \
+ && chmod g+rwX "/var/lib/pgsql/" \
+ && chgrp -R root "/var/run/postgresql" \
+ && chmod g+rw "/var/run/postgresql" \
+ && chmod ug+x "/usr/libexec/check-container" \
+  ;
+
+USER 26
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+STOPSIGNAL SIGINT
+
+EXPOSE 5432
+
+CMD ["/usr/pgsql-18/bin/postgres"]
