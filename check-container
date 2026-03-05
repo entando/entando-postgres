@@ -20,7 +20,7 @@ fi
 
 # Readiness check follows, the --timeout is set to "infinite" because it
 # is handled externally (readinessProbe.timeoutSeconds).
-/usr/pgsql-14/bin/pg_isready -q \
+/usr/pgsql-18/bin/pg_isready -q \
     -h 127.0.0.1 \
     ${POSTGRESQL_USER+-U "$POSTGRESQL_USER"} \
     ${POSTGRESQL_DATABASE+-d "$POSTGRESQL_DATABASE"} \

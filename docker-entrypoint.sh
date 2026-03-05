@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PGCTL="/usr/pgsql-14/bin/pg_ctl"
+PGCTL="/usr/pgsql-18/bin/pg_ctl"
 
 [[ "$PGDATA" != */ ]] && PGDATA="$PGDATA/"
 
@@ -31,7 +31,7 @@ else
 
   # Before PostgreSQL can function correctly, the database cluster must be initialized:
   [ ! -d "$PGDATA" ] && {
-    LANG=${LANG:-en_US.utf8} /usr/pgsql-14/bin/initdb -D "$PGDATA" --username "$PGUSER"
+    LANG=${LANG:-en_US.utf8} /usr/pgsql-18/bin/initdb -D "$PGDATA" --username "$PGUSER"
   }
   chmod -R 0700 "$PGDATA"
 
