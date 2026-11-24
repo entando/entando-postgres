@@ -32,3 +32,14 @@ You can also set the following mount points by passing the `-v /host/dir:/contai
 
 * `/var/lib/pgsql/data`
 PostgreSQL database directory
+
+## Tests
+Container smoke tests live in `tests/` and run in CI for every image and every platform before publication:
+
+```
+# one image on one platform (non-native platforms need QEMU/binfmt)
+tests/smoke-test.sh <image> linux/amd64
+
+# supported cross-architecture migration path: pg_dumpall on one platform, restore on another
+tests/cross-arch-restore.sh <srcImage> linux/amd64 <dstImage> linux/arm64
+```
