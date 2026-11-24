@@ -1,6 +1,10 @@
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7
 
-ARG TARGETPLATFORM
+# PostgreSQL version to install from the PGDG repository.
+# Packages are resolved by name, so the same definition works on every
+# architecture supported by PGDG (x86_64, aarch64).
+ARG PG_MAJOR=18
+ARG PG_VERSION=18.7
 
 ENV PGDATA /var/lib/pgsql/data/userdata
 ENV PGUSER postgres
@@ -10,31 +14,27 @@ ENV POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
 ENV POSTGRESQL_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
 ENV PATH $PATH:$PGDATA
 
-#Install PostgreSQL for linux/amd64
-RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ]; then \
-    rm -f etc/rpm/macros.image-language-conf && \
-    microdnf install -y dnf && \
-    dnf update -y && \
+# Install PostgreSQL (architecture-agnostic)
+RUN set -eux; \
+    ARCH="$(uname -m)"; \
+    case "${ARCH}" in \
+      x86_64|aarch64) ;; \
+      *) echo "Unsupported architecture: ${ARCH}" >&2; exit 1 ;; \
+    esac; \
+    rm -f /etc/rpm/macros.image-language-conf; \
+    microdnf install -y dnf; \
+    dnf update -y; \
+    dnf install -y "https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-${ARCH}/pgdg-redhat-repo-latest.noarch.rpm"; \
     dnf install -y \
-    langpacks-en glibc-all-langpacks -y \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-server-18.1-1PGDG.rhel9.x86_64.rpm \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-libs-18.1-1PGDG.rhel9.x86_64.rpm \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-18.1-1PGDG.rhel9.x86_64.rpm \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-contrib-18.1-1PGDG.rhel9.x86_64.rpm; \
-    fi
-
-#Install PostgreSQL for linux/arm64
-RUN if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
-    rm -f etc/rpm/macros.image-language-conf && \
-    microdnf install -y dnf && \
-    dnf update -y && \
-    dnf install -y \
-    langpacks-en glibc-all-langpacks -y \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-server-18.1-2PGDG.rhel9.aarch64.rpm \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-libs-18.1-2PGDG.rhel9.aarch64.rpm \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-18.1-2PGDG.rhel9.aarch64.rpm \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-contrib-18.1-2PGDG.rhel9.aarch64.rpm; \
-    fi
+      --disablerepo='pgdg*' --enablerepo="pgdg${PG_MAJOR}" --enablerepo='pgdg-common' \
+      langpacks-en glibc-all-langpacks \
+      "postgresql${PG_MAJOR}-${PG_VERSION}" \
+      "postgresql${PG_MAJOR}-libs-${PG_VERSION}" \
+      "postgresql${PG_MAJOR}-server-${PG_VERSION}" \
+      "postgresql${PG_MAJOR}-contrib-${PG_VERSION}"; \
+    dnf clean all; \
+    rm -rf /var/cache/dnf /var/cache/yum; \
+    "/usr/pgsql-${PG_MAJOR}/bin/postgres" --version | grep -F " ${PG_VERSION}"
 
 COPY docker-entrypoint.sh /
 COPY check-container /usr/libexec/
