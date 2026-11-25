@@ -1,12 +1,13 @@
 name: Docker MultiModule PR
 
 env:
-  ENTANDO_GITHUB_TOOLS_VERSION: "v0.1.2"
+  ENTANDO_GITHUB_TOOLS_VERSION: "v0.2.0"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GH_PR_TITLE: ${{ github.event.pull_request.title }}
   GH_PR_NUMBER: ${{ github.event.pull_request.number }}
   GH_PR_RUN_NUMBER: ${{ github.run_number }}
   IMAGES_TO_BUILD: "Dockerfile.rocky9:entando-postgres-rocky,Dockerfile.ubi9:entando-postgres-ubi"
+  DOCKER_PLATFORMS: "linux/amd64,linux/arm64"
   ENTANDO_CRANE_VERSION: ${{ vars.ENTANDO_CRANE_VERSION || 'v0.10.0' }}
   GITHUB_REF: ${{ github.ref }}
 
@@ -31,18 +32,49 @@ jobs:
     - name: Configure
       run: if [ -f ".github/configure" ]; then . .github/configure "publish"; fi
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Build Docker image
       run: |
-        .github/github-tools/docker.multiBuild \
+        DOCKER_LOAD=true \
+        .github/github-tools/docker.multiBuildx \
           "${IMAGES_TO_BUILD}" \
           "${ARTIFACT_VERSION}" \
           "${{ vars.DOCKER_ORG }}" \
         ;
 
+    - name: Smoke test (every image, every platform)
+      run: |
+        set -e
+        IFS=',' read -r -a images <<< "${IMAGES_TO_BUILD}"
+        IFS=',' read -r -a platforms <<< "${DOCKER_PLATFORMS}"
+        for entry in "${images[@]}"; do
+          name="${entry#*:}"
+          base="${{ vars.DOCKER_ORG }}/${name}:${ARTIFACT_VERSION}"
+          for platform in "${platforms[@]}"; do
+            echo "::group::${name} on ${platform}"
+            tests/smoke-test.sh "${base}-${platform#*/}" "${platform}"
+            echo "::endgroup::"
+          done
+          if [[ ",${DOCKER_PLATFORMS}," == *",linux/amd64,"* && ",${DOCKER_PLATFORMS}," == *",linux/arm64,"* ]]; then
+            echo "::group::${name}: dump/restore linux/amd64 -> linux/arm64"
+            tests/cross-arch-restore.sh \
+              "${base}-amd64" linux/amd64 \
+              "${base}-arm64" linux/arm64
+            echo "::endgroup::"
+          fi
+        done
+
     - name: Publish Docker image
       run: |
         GH_DO_COMMENT=true \
-          .github/github-tools/docker.multiPublish \
+          .github/github-tools/docker.multiPublishx \
             "${IMAGES_TO_BUILD}" \
             "${ARTIFACT_VERSION}" \
             "${{ vars.DOCKER_ORG }}" \
