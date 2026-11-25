@@ -1,5 +1,5 @@
-# PostgreSQL 18.7 SQL Database Server container image
-This container image includes PostgreSQL 18.7 SQL database server for general usage. Users can choose between RHEL(ubi9) and Rocky based images.
+# PostgreSQL 18.1 SQL Database Server container image
+This container image includes PostgreSQL 18.1 SQL database server for general usage. Users can choose between RHEL(ubi9) and Rocky based images.
 
 ## Quick Start
 * Clone or download this repository
@@ -14,9 +14,20 @@ same definition builds on `linux/amd64` and `linux/arm64`. To build for a specif
 docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.ubi9 -t (image:tag) .
 ```
 
-The PostgreSQL version is controlled by the `PG_MAJOR` / `PG_VERSION` build args (e.g. `--build-arg PG_VERSION=18.7`).
-PGDG only keeps the latest minor release in its repository, so the pinned `PG_VERSION` must be bumped when a new
-minor is released; the build fails explicitly if the requested version is not available.
+The PostgreSQL version is controlled by the `PG_MAJOR` / `PG_VERSION` build args (default `18` / `18.1`).
+The PGDG main repository only keeps the latest minor release, so packages are installed from the PGDG archive
+(`https://yum-archive.postgresql.org`), where every minor stays available for both architectures. The source is set by
+`PG_REPO_BASE` / `PG_REPO_DIST`; e.g. to build the latest minor from the main repository:
+
+```
+docker build -f Dockerfile.ubi9 \
+  --build-arg PG_VERSION=<latest-minor> \
+  --build-arg PG_REPO_BASE=https://download.postgresql.org/pub/repos/yum \
+  --build-arg PG_REPO_DIST=rhel-9 \
+  -t (image:tag) .
+```
+
+The build fails explicitly if the requested version is not available.
 
 ## Environment variables and volumes
 The image recognizes the following environment variables.

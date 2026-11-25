@@ -4,7 +4,14 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7
 # Packages are resolved by name, so the same definition works on every
 # architecture supported by PGDG (x86_64, aarch64).
 ARG PG_MAJOR=18
-ARG PG_VERSION=18.7
+ARG PG_VERSION=18.1
+
+# PGDG repository the packages come from. The main repository
+# (https://download.postgresql.org/pub/repos/yum + rhel-9) only keeps the latest
+# minor release, so a pinned older minor is installed from the PGDG archive.
+# Resulting baseurl: ${PG_REPO_BASE}/${PG_MAJOR}/redhat/${PG_REPO_DIST}-<arch>
+ARG PG_REPO_BASE=https://yum-archive.postgresql.org
+ARG PG_REPO_DIST=rhel-9.7
 
 ENV PGDATA /var/lib/pgsql/data/userdata
 ENV PGUSER postgres
@@ -14,19 +21,28 @@ ENV POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
 ENV POSTGRESQL_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
 ENV PATH $PATH:$PGDATA
 
-# Install PostgreSQL (architecture-agnostic)
+# Install PostgreSQL (architecture-agnostic).
+# PGDG signs x86_64 and aarch64 packages with different GPG keys.
 RUN set -eux; \
     ARCH="$(uname -m)"; \
     case "${ARCH}" in \
-      x86_64|aarch64) ;; \
+      x86_64)  PG_GPG_KEY="PGDG-RPM-GPG-KEY-RHEL" ;; \
+      aarch64) PG_GPG_KEY="PGDG-RPM-GPG-KEY-AARCH64-RHEL" ;; \
       *) echo "Unsupported architecture: ${ARCH}" >&2; exit 1 ;; \
     esac; \
     rm -f /etc/rpm/macros.image-language-conf; \
     microdnf install -y dnf; \
     dnf update -y; \
-    dnf install -y "https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-${ARCH}/pgdg-redhat-repo-latest.noarch.rpm"; \
+    printf '%s\n' \
+      "[pgdg${PG_MAJOR}]" \
+      "name=PostgreSQL ${PG_MAJOR} (PGDG) - ${ARCH}" \
+      "baseurl=${PG_REPO_BASE}/${PG_MAJOR}/redhat/${PG_REPO_DIST}-${ARCH}" \
+      "enabled=1" \
+      "gpgcheck=1" \
+      "repo_gpgcheck=0" \
+      "gpgkey=https://download.postgresql.org/pub/repos/yum/keys/${PG_GPG_KEY}" \
+      > "/etc/yum.repos.d/pgdg${PG_MAJOR}.repo"; \
     dnf install -y \
-      --disablerepo='pgdg*' --enablerepo="pgdg${PG_MAJOR}" --enablerepo='pgdg-common' \
       langpacks-en glibc-all-langpacks \
       "postgresql${PG_MAJOR}-${PG_VERSION}" \
       "postgresql${PG_MAJOR}-libs-${PG_VERSION}" \
@@ -34,7 +50,7 @@ RUN set -eux; \
       "postgresql${PG_MAJOR}-contrib-${PG_VERSION}"; \
     dnf clean all; \
     rm -rf /var/cache/dnf /var/cache/yum; \
-    "/usr/pgsql-${PG_MAJOR}/bin/postgres" --version | grep -F " ${PG_VERSION}"
+    "/usr/pgsql-${PG_MAJOR}/bin/postgres" --version | grep -Fx "postgres (PostgreSQL) ${PG_VERSION}"
 
 COPY docker-entrypoint.sh /
 COPY check-container /usr/libexec/
